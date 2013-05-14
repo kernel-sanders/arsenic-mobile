@@ -1,0 +1,76 @@
+   _____                             .__        
+  /  _  \_______  ______ ____   ____ |__| ____  
+ /  /_\  \_  __ \/  ___// __ \ /    \|  |/ ___\ 
+/    |    \  | \/\___ \\  ___/|   |  \  \  \___ 
+\____|__  /__|  /____  >\___  >___|  /__|\___  >
+        \/           \/     \/     \/        \/ 
+
+Arsenic-mobile - A zero configuration ARP poisoning and 
+credential extractor tool for iOS
+Tested on iOS 5.1.1 and 6.1.2
+
+Version: 1.0
+
+Author: KernelSanders (kernelsanders@icloud.com)
+
+Usage: arsenic
+
+Installation:
+    The first step required to install arsenic-mobile on a device 
+    running iOS is to jailbreak the device. This will allow 
+    unsigned code to run on the device. Depending on the version 
+    of iOS the device is running this may or may not be possible. 
+    A cursory internet search will determine if it is possible 
+    and how to accomplish jailbreaking the device.
+
+    In order to install the necessary components and transfer 
+    files to the device running iOS, OpenSSH must be installed. 
+    From within the Cydia application search for OpenSSH and 
+    install it. The IP address of the device can be found under 
+    the Settings app in the Wi-Fi section by touching the blue 
+    arrow to the right of the network you are connected to. 
+
+    Download arsenic-mobile as a zip file and extract it. 
+    Transfer the arsenic-mobile folder to the device by running
+
+    scp -r arsenic-mobile root@[IP Address of iOS device]:
+
+    The default password is "alpine". Then SSH into the device. 
+    To SSH into the device, from a computer on the same network 
+    run the following command (Linux or OSX in terminal, 
+    Windows will require an external program like PUTTY)
+
+    ssh root@[IP Address of the device]
+    cd arsenic-mobile/Dependencies/Python
+    dpkg -i berkeleydb_4.6.21-4p_iphoneos-arm.deb
+    dpkg -i libffi_1%3a3.0.10-5_iphoneos-arm.deb
+    dpkg -i sqlite3-lib_3.5.9-2_iphoneos-arm.deb
+    dpkg -i sqlite3_3.5.9-12_iphoneos-arm.deb
+    dpkg -i python_2.7.3-3_iphoneos-arm.deb 
+    cd ../..
+    python setup.py
+
+
+Detailed Description:
+    SSL, TLS, and https were supposed to solve the problem of credentials
+    being readable on a network as they are transmitted to servers. 
+    However, users can be arp spoofed, effectively giving you control of 
+    all their traffic. From then on, any requests for https addresses made 
+    by the user can be replaced by http on the fly. This presents a nearly 
+    identical experience for the user. Browsers go to great lengths to alert
+    users of expired or untrusted certificates, but have very little in
+    the way of showing you are browsing on an insecure connection. Besides 
+    a missing lock icon or gold address bar, the user has no indication there 
+    is a potential security issue with their session. For this reason, they
+    will likely browse as normal and when they enter credentials to log into 
+    a site, Arsenic is there to extract them. Arsenic is built 
+    on the work of others, especially Moxie Marlinspike and his sslstrip 
+    tool. What Arsenic provides is a configuration free GUI environment to 
+    demonstrate this potential vulnerability.
+
+Known Issues:
+    - killsessions doesn't work on sites that encrypt their 
+        entire session (facebook, gmail)
+    - In some cases, google searches fail to load a clicked 
+        link (a second click loads the page)
+
