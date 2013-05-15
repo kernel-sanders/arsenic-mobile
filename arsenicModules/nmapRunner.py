@@ -70,15 +70,15 @@ ARP spoof ourselves.
 def getOwnIP():
     global MYIP
     if MYIP == '':
-        f = os.popen("ifconfig")
+        f = os.popen("ifconfig en0")
         data = f.read()
         f.close()
         IPs = re.findall(r"""inet\s[0-9]+(?:\.[0-9]+){3}""", data)
         if len(IPs) < 2:
             print 'No network detected'
             os._exit(1)
-        MYIP = IPs[1][5:]
-        return IPs[1][5:]
+        MYIP = IPs[0][5:]
+        return IPs[0][5:]
     else:
         return MYIP
 

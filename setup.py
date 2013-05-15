@@ -12,7 +12,7 @@ def main():
         os.system('dpkg -i csu_232-2_iphoneos-arm.deb') 
         os.system('dpkg -i libgcc_4.2-20080410-1-6_iphoneos-arm.deb') 
         os.system('dpkg -i odcctools_286-8_iphoneos-arm.deb') 
-        os.system('dpkg -i iphone-gcc_4.2-20080604-1-8_iphoneos-arm.deb') 
+        os.system('dpkg -i iphone-gcc_4.2-20080604-1-8p_iphoneos-arm.deb') 
         os.system('dpkg -i ldid_610-5_iphoneos-arm.deb')
         os.system('dpkg -i com.sull.iphone-gccheaders_1.0-11_iphoneos-arm.deb') 
         print 'Done'
@@ -55,13 +55,22 @@ def main():
         print 'Done'
         print 'Moving files... ',
         if not os.path.isfile('/etc/pf.os'):
-            os.system('mv ' + os.getcwd() + '/arsenicModules/pf.os' + ' /etc/')
-        os.system('mv arsenic /usr/bin/')
-        os.system('mv arsenicModules /usr/bin')
+            os.system('cp ' + os.getcwd() + '/arsenicModules/pf.os' + ' /etc/')
+        os.system('cp arsenic /usr/bin/')
+        os.system('cp arsenicModules /usr/bin')
         print 'Done'
-        # print 'Cleaning up...',
-        # os.system('rm setup.py')
-        # print 'Done'
+        f = os.popen('uname -a')
+        data = f.read()
+        f.close()
+        if 'iPhone5' in data:
+            print 'Gotta do some ARMv7 patching....',
+            os.chdir('/usr/sbin')
+            os.system("sed -i'' 's/\x00\x30\x93\xe4/\x00\x30\x93\xe5/g;s/\x00\x30\xd3\xe4/\x00\x30\xd3\xe5/g;' arpspoof")
+            os.system("ldid -s arpspoof")
+            os.chdir('/sbin')
+            os.system("sed -i'' 's/\x00\x30\x93\xe4/\x00\x30\x93\xe5/g;s/\x00\x30\xd3\xe4/\x00\x30\xd3\xe5/g;' ifconfig")
+            os.system("ldid -s ifconfig")
+            print 'Done'
         print 'arsenic-mobile installed. Enjoy!'
 
 
