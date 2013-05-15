@@ -140,7 +140,6 @@ cases)'''
             if not is_valid_ip4_address(victim):
                 print 'You entered an invalid address.'
                 os._exit(1)
-            print '\nSetting up...\n'
             self.startSingle(victim)
             self.printTheQueue()
         elif choice == '3':
