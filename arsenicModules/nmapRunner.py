@@ -74,7 +74,7 @@ def getOwnIP():
         data = f.read()
         f.close()
         IPs = re.findall(r"""inet\s[0-9]+(?:\.[0-9]+){3}""", data)
-        if len(IPs) < 2:
+        if len(IPs) < 1:
             print 'No network detected'
             os._exit(1)
         MYIP = IPs[0][5:]
