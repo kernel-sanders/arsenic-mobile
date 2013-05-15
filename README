@@ -7,7 +7,7 @@
 
 Arsenic-mobile - A zero configuration ARP poisoning and 
 credential extractor tool for iOS
-Tested on iOS 5.1.1 and 6.1.2
+Tested on iOS 5.1.1 and 6.1.2 (iPhone 4 and 5)
 
 Version: 1.0
 
@@ -51,7 +51,7 @@ Installation:
     python setup.py
 
 
-Detailed Description:
+Description:
     SSL, TLS, and https were supposed to solve the problem of credentials
     being readable on a network as they are transmitted to servers. 
     However, users can be arp spoofed, effectively giving you control of 
@@ -63,10 +63,16 @@ Detailed Description:
     a missing lock icon or gold address bar, the user has no indication there 
     is a potential security issue with their session. For this reason, they
     will likely browse as normal and when they enter credentials to log into 
-    a site, Arsenic is there to extract them. Arsenic is built 
+    a site, arsenic-mobile is there to extract them. arsenic-mobile is built 
     on the work of others, especially Moxie Marlinspike and his sslstrip 
-    tool. What Arsenic provides is a configuration free GUI environment to 
+    tool. What arsenic-mobile provides is a configuration free mobile environment to 
     demonstrate this potential vulnerability.
+
+    A slide deck that explains how this works and how it was ported to iOS:
+    https://github.com/kernel-sanders/arsenic-mobile/blob/master/Arsenic-Mobile_Slides.pdf?raw=true
+
+    A paper that does the same is available here:
+    https://github.com/kernel-sanders/arsenic-mobile/blob/master/Arsenic-Mobile.pdf?raw=true
 
 Known Issues:
     - killsessions doesn't work on sites that encrypt their 
